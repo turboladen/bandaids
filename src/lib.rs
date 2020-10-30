@@ -1,5 +1,6 @@
 use js_sys::{Array, Object, Reflect};
-use wasm_bindgen::{prelude::*, JsCast};
+use wasm_bindgen::prelude::*;
+use web_sys::window;
 use yew::prelude::*;
 
 struct Model {
@@ -53,31 +54,49 @@ impl Component for Model {
 }
 
 fn build_graph() -> Object {
-    let data = {
-        let d = Object::create(&JsValue::NULL.into());
-        Reflect::set(&d, &JsValue::from_str("id"), &JsValue::from_str("a")).unwrap();
-
-        d
-    };
-
-    let node = {
-        let n = Object::create(&JsValue::NULL.into());
-        Reflect::set(&n, &JsValue::from_str("data"), &data).unwrap();
-        n
-    };
-
-    let nodes = Array::new();
-    nodes.push(node.as_ref());
-
     let elements = {
+        let data = {
+            let d = Object::create(&JsValue::NULL.into());
+            Reflect::set(&d, &JsValue::from_str("id"), &JsValue::from_str("a")).unwrap();
+
+            d
+        };
+
+        let node = {
+            let n = Object::create(&JsValue::NULL.into());
+            Reflect::set(&n, &JsValue::from_str("data"), &data).unwrap();
+            n
+        };
+
+        let nodes = Array::new();
+        nodes.push(&node.into());
         let e = Object::create(&JsValue::NULL.into());
         Reflect::set(&e, &JsValue::from_str("nodes"), &nodes).unwrap();
         e
     };
+    let layout = {
+        let o = Object::create(&JsValue::NULL.into());
+        Reflect::set(&o, &JsValue::from_str("name"), &JsValue::from_str("grid")).unwrap();
+        Reflect::set(&o, &JsValue::from_str("rows"), &JsValue::from_f64(1.)).unwrap();
+        o
+    };
 
     let options = {
         let o = Object::create(&JsValue::NULL.into());
-        Reflect::set(&o, &JsValue::from_str("elements"), elements.as_ref()).unwrap();
+        // Reflect::set(
+        //     &o,
+        //     &JsValue::from_str("container"),
+        //     &window()
+        //         .expect_throw("no window")
+        //         .document()
+        //         .expect_throw("no document")
+        //         .get_element_by_id("cy")
+        //         .expect_throw("no 'cy' id")
+        //         .into(),
+        // )
+        // .unwrap();
+        Reflect::set(&o, &JsValue::from_str("elements"), &elements.into()).unwrap();
+        Reflect::set(&o, &JsValue::from_str("layout"), &layout.into()).unwrap();
         o
     };
 
