@@ -1,4 +1,4 @@
-mod graph;
+mod cytoscape;
 
 use js_sys::{Array, Object, Reflect};
 use wasm_bindgen::prelude::*;
@@ -8,7 +8,20 @@ use yew::prelude::*;
 struct Model {
     link: ComponentLink<Self>,
     value: i64,
-    graph: graph::Graph,
+    graph: cytoscape::Cytoscape,
+}
+
+impl Model {
+    async fn mount(&self) -> Result<JsValue, JsValue> {
+        let cy = web_sys::window()
+            .unwrap()
+            .document()
+            .expect_throw("no document")
+            .get_element_by_id("cy")
+            .expect_throw("no 'cy' id");
+
+        self.graph.mount(cy).await
+    }
 }
 
 enum Msg {
@@ -23,19 +36,13 @@ impl Component for Model {
         Self {
             link,
             value: 0,
-            graph: graph::Graph::new(),
+            graph: cytoscape::init(),
         }
     }
 
     fn update(&mut self, msg: Self::Message) -> ShouldRender {
         match msg {
             Msg::AddOne => {
-                let node1_name = format!("meow{}", self.value);
-                let node2_name = format!("meow{}", self.value + 1);
-                let meow1 = self.graph.new_node(graph::Node::new(&node1_name).into());
-                let meow2 = self.graph.new_node(graph::Node::new(&node2_name).into());
-                self.graph.new_edge(meow1, meow2);
-
                 self.value += 1;
             }
         }
@@ -51,63 +58,21 @@ impl Component for Model {
 
     fn view(&self) -> Html {
         html! {
-            <div id="graph">
+            <div id="main">
                 <button onclick=self.link.callback(|_| Msg::AddOne)>{ "+1" }</button>
                 <p>{ self.value }</p>
+                <div id="cy">
+                </div>
             </div>
         }
     }
+
+    // fn rendered(&mut self, first_render: bool) {
+    //     if first_render {
+    //         self.mount().expect_throw("uh oh");
+    //     }
+    // }
 }
-
-// fn build_graph() -> Object {
-//     let elements = {
-//         let data = {
-//             let d = Object::create(&JsValue::NULL.into());
-//             Reflect::set(&d, &JsValue::from_str("id"), &JsValue::from_str("a")).unwrap();
-
-//             d
-//         };
-
-//         let node = {
-//             let n = Object::create(&JsValue::NULL.into());
-//             Reflect::set(&n, &JsValue::from_str("data"), &data).unwrap();
-//             n
-//         };
-
-//         let nodes = Array::new();
-//         nodes.push(&node.into());
-//         let e = Object::create(&JsValue::NULL.into());
-//         Reflect::set(&e, &JsValue::from_str("nodes"), &nodes).unwrap();
-//         e
-//     };
-//     let layout = {
-//         let o = Object::create(&JsValue::NULL.into());
-//         Reflect::set(&o, &JsValue::from_str("name"), &JsValue::from_str("grid")).unwrap();
-//         Reflect::set(&o, &JsValue::from_str("rows"), &JsValue::from_f64(1.)).unwrap();
-//         o
-//     };
-
-//     let options = {
-//         let o = Object::create(&JsValue::NULL.into());
-//         // Reflect::set(
-//         //     &o,
-//         //     &JsValue::from_str("container"),
-//         //     &window()
-//         //         .expect_throw("no window")
-//         //         .document()
-//         //         .expect_throw("no document")
-//         //         .get_element_by_id("cy")
-//         //         .expect_throw("no 'cy' id")
-//         //         .into(),
-//         // )
-//         // .unwrap();
-//         Reflect::set(&o, &JsValue::from_str("elements"), &elements.into()).unwrap();
-//         Reflect::set(&o, &JsValue::from_str("layout"), &layout.into()).unwrap();
-//         o
-//     };
-
-//     cytoscape(options)
-// }
 
 #[wasm_bindgen(start)]
 pub fn run_app() {
